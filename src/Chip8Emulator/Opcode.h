@@ -1,3 +1,5 @@
 #pragma once
 
-using Opcode = unsigned short;
+#include <cstdint>
+
+using Opcode = uint16_t;

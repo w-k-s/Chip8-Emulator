@@ -4,11 +4,16 @@
 #include "Opcode.h"
 
 class CPU{
+
 private:
+	static const int STACK_SIZE = 16;
+	
 	int _programCounter;
 	int _stackPointer;
-	int _indexRegister;
-	Memory * _memory;
+	uint16_t _indexRegister;
+	byte _stack[STACK_SIZE];
+	byte _V[16];
+	byte * _memory;
 
 	void reset();
 
@@ -31,43 +36,43 @@ private:
 
 	void returnFromSubroutine();
 
-	void jumpToAddressNNN(const Opcode opcode);
+	void jumpToAddressNNN(const uint16_t nnn);
 
-	void invokeSubroutine(const Opcode opcode);
+	void invokeSubroutine(const uint16_t nnn);
 
-	void skipNextIfEqualsConstant(const Opcode opcode);
+	void skipNextIfVxEqualsNN(const byte vx, const byte nn);
 
-	void skipNextIfNotEqualsConstant(const Opcode opcode);
+	void skipNextIfVxNotEqualsNN(const byte vx, const byte nn);
 
-	void skipNextIfEqualsVariable(const Opcode opcode);
+	void skipNextIfVxEqualsVy(const byte vx, const byte vy);
 
-	void set(const Opcode opcode);
+	void setVxToNN(const byte x, const byte nn);
 
-	void sumWithConstant(const Opcode opcode);
+	void addNNtoVx(const byte x, const byte nn);
 
-	void assign(const Opcode opcode);
+	void setVxToVy(const byte x, const byte y);
 
-	void bitwiseOr(const Opcode opcode);
+	void bitwiseOr(const byte x, const byte y);
 
-	void bitwiseAnd(const Opcode opcode);
+	void bitwiseAnd(const byte x, const byte y);
 
-	void bitwiseXor(const Opcode opcode);
+	void bitwiseXor(const byte x, const byte y);
 
-	void sumWithVariable(const Opcode opcode);
+	void sumWithVariable(const byte x, const byte vx, const byte vy);
 
-	void subtractWithVariable(const Opcode opcode);
+	void subtractVyFromVx(const byte x, const byte vx, const byte vy);
 
-	void bitwiseShiftRightByOne(const Opcode opcode);
+	void bitwiseShiftRightByOne(const byte x);
 
-	void subtractWithDifference(const Opcode opcode);
+	void subtractWithDifference(const byte x, const byte vx, const byte vy);
 
-	void bitwiseShiftLeftByOne(const Opcode opcode);
+	void bitwiseShiftLeftByOne(const byte xopcode);
 
-	void skipNextIfNotEqualsVariable(const Opcode opcode);
+	void skipNextIfVxNotEqualsVy(const byte vx, const byte vy);
 
-	void setIndexRegisterAddress(const Opcode opcode);
+	void setIndexRegisterAddress(const uint16_t nnn);
 
-	void jumpToAddressNNNPlusV0(const Opcode opcode);
+	void jumpToAddressNNNPlusV0(const uint16_t nnn);
 
 	void setVxToBitwiseAndOfRandomNumberAndNN(const Opcode opcode);
 
@@ -96,7 +101,7 @@ private:
 	void loadRegisters(const Opcode opcode);
 
 public:
-	CPU(Memory * memory);
+	CPU(byte * memory);
 	void run();
 	~ CPU();
 };
