@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #include "Memory.h"
 #include "Opcode.h"
 
@@ -7,13 +9,19 @@ class CPU{
 
 private:
 	static const int STACK_SIZE = 16;
-	
+	static const int REGISTER_COUNT = 16;
+
 	int _programCounter;
 	int _stackPointer;
 	uint16_t _indexRegister;
 	byte _stack[STACK_SIZE];
-	byte _V[16];
+	byte _V[REGISTER_COUNT];
 	byte * _memory;
+	byte _delayTimer;
+	byte _soundTimer;
+
+	std::mt19937 _randomNumberGenerator;
+	std::uniform_real_distribution<byte> _randomNumberDistribution;
 
 	void reset();
 
@@ -64,9 +72,9 @@ private:
 
 	void bitwiseShiftRightByOne(const byte x);
 
-	void subtractWithDifference(const byte x, const byte vx, const byte vy);
+	void subtractVxFromVy(const byte x, const byte vx, const byte vy);
 
-	void bitwiseShiftLeftByOne(const byte xopcode);
+	void bitwiseShiftLeftByOne(const byte x);
 
 	void skipNextIfVxNotEqualsVy(const byte vx, const byte vy);
 
@@ -74,7 +82,7 @@ private:
 
 	void jumpToAddressNNNPlusV0(const uint16_t nnn);
 
-	void setVxToBitwiseAndOfRandomNumberAndNN(const Opcode opcode);
+	void setVxToBitwiseAndOfRandomNumberAndNN(const byte x, const byte nn);
 
 	void drawSprite(const Opcode opcode);
 
@@ -82,26 +90,29 @@ private:
 
 	void skipNextIfKeyInVxIsNotPressed(const Opcode opcode);
 
-	void assignDelayTimerToVx(const Opcode opcode);
+	void assignDelayTimerToVx(const byte x);
 
 	void getKey(const Opcode opcode);
 
-	void setVxToDelayTimer(const Opcode opcode);
+	void setDelayTimerToVx(const byte vx);
 
-	void setVxToSoundTimer(const Opcode opcode);
+	void setSoundTimerToVx(const byte vx);
 
-	void addVxToIndexRegister(const Opcode opcode);
+	void addVxToIndexRegister(const byte x, const byte vx);
 
 	void setIndexRegisterToSpriteLocation(const Opcode opcode);
 
-	void setBinaryCodedDecimalAtVx(const Opcode opcode);
+	void setBinaryCodedDecimalAtVx(const byte vx);
 
-	void dumpRegisters(const Opcode opcode);
+	void dumpRegisters(const byte x);
 
-	void loadRegisters(const Opcode opcode);
+	void loadRegisters(const byte x);
 
 public:
 	CPU(byte * memory);
+	CPU(const CPU&)				= delete;
+	void operator=(const CPU&)	= delete;
+	
 	void run();
 	~ CPU();
 };

@@ -15,5 +15,7 @@ private:
 	void loadFontSet();
 public:
 	Chip8();
+	Chip8(const Chip8&)				= delete;
+    void operator=(const Chip8&)	= delete;
 	~Chip8();
 };

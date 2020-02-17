@@ -1,10 +1,16 @@
 #include "CPU.h"
+#include "CycleTimer.h"
 
 #include <iostream>
 
 CPU::CPU(byte* memory)
 {
     this->_memory = memory;
+
+    // TODO: Only initialize when needed.
+    std::random_device randomDevice;
+    this->_randomNumberGenerator = std::mt19937 { randomDevice() };
+    this->_randomNumberDistribution = std::uniform_real_distribution<byte> { 0, 255 };
 
     this->reset();
 }
@@ -22,7 +28,7 @@ void CPU::reset()
 
     this->clearStack();
     this->clearRegisters();
-    // this->resetTimers();
+    this->resetTimers();
 }
 
 void CPU::clearStack()
@@ -34,7 +40,12 @@ void CPU::clearStack()
 void CPU::clearRegisters()
 {
     memset(this->_V, 0, sizeof(this->_V));
-    ;
+}
+
+void CPU::resetTimers()
+{
+    this->_soundTimer = 0;
+    this->_delayTimer = 0;
 }
 
 void CPU::run()
@@ -46,9 +57,15 @@ void CPU::run()
 
 void CPU::cycle()
 {
+    // Cycle should maintain 60Hz
+    const auto timer = CycleTimer { 60 };
+
     if (this->_programCounter >= CHIP_8_MEMORY_SIZE) {
         //TODO return error
-        std::cerr << "Instruction Address outside memory bounds. Expected: 0.." << CHIP_8_MEMORY_SIZE << ", Got: " << this->_programCounter << "\n";
+        std::cerr << "Instruction Address outside memory bounds. Expected: 0.."
+                  << CHIP_8_MEMORY_SIZE
+                  << ", Got: "
+                  << this->_programCounter << "\n";
         exit(2);
     }
 
@@ -57,6 +74,17 @@ void CPU::cycle()
     this->_programCounter += 2;
 
     this->decodeOpcode(opcode);
+
+    if (this->_delayTimer)
+        this->_delayTimer--;
+
+    if (this->_soundTimer)
+        this->_soundTimer--;
+    if (this->_soundTimer == 1) {
+        std::cout << "\a";
+    }
+
+    timer.maintainCycleRate();
 }
 
 Opcode CPU::fetchOpcode()
@@ -110,7 +138,7 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF00F) == 0x8006) {
         this->bitwiseShiftRightByOne(x);
     } else if ((opcode & 0xF00F) == 0x8007) {
-        this->subtractWithDifference(x, vx, vy);
+        this->subtractVxFromVy(x, vx, vy);
     } else if ((opcode & 0xF00F) == 0x800E) {
         this->bitwiseShiftLeftByOne(x);
     } else if ((opcode & 0xF00F) == 0x9000) {
@@ -120,7 +148,7 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF000) == 0xB000) {
         this->jumpToAddressNNNPlusV0(nnn);
     } else if ((opcode & 0xF000) == 0xC000) {
-        this->setVxToBitwiseAndOfRandomNumberAndNN(opcode);
+        this->setVxToBitwiseAndOfRandomNumberAndNN(x, nn);
     } else if ((opcode & 0xF000) == 0xD000) {
         this->drawSprite(opcode);
     } else if ((opcode & 0xF0FF) == 0xE09E) {
@@ -128,23 +156,23 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF0FF) == 0xE0A1) {
         this->skipNextIfKeyInVxIsNotPressed(opcode);
     } else if ((opcode & 0xF0FF) == 0xF007) {
-        this->assignDelayTimerToVx(opcode);
+        this->assignDelayTimerToVx(x);
     } else if ((opcode & 0xF0FF) == 0xF00A) {
         this->getKey(opcode);
     } else if ((opcode & 0xF0FF) == 0xF015) {
-        this->setVxToDelayTimer(opcode);
+        this->setDelayTimerToVx(vx);
     } else if ((opcode & 0xF0FF) == 0xF018) {
-        this->setVxToSoundTimer(opcode);
+        this->setSoundTimerToVx(vx);
     } else if ((opcode & 0xF0FF) == 0xF01E) {
-        this->addVxToIndexRegister(opcode);
+        this->addVxToIndexRegister(x, vx);
     } else if ((opcode & 0xF0FF) == 0xF029) {
         this->setIndexRegisterToSpriteLocation(opcode);
     } else if ((opcode & 0xF0FF) == 0xF033) {
-        this->setBinaryCodedDecimalAtVx(opcode);
+        this->setBinaryCodedDecimalAtVx(vx);
     } else if ((opcode & 0xF0FF) == 0xF055) {
-        this->dumpRegisters(opcode);
+        this->dumpRegisters(x);
     } else if ((opcode & 0xF0FF) == 0xF065) {
-        this->loadRegisters(opcode);
+        this->loadRegisters(x);
     } else {
         std::cerr << "Unknwown opcode: '" << opcode << "'\n";
     }
@@ -256,7 +284,7 @@ inline void CPU::bitwiseShiftRightByOne(const byte x)
     this->_V[x] = this->_V[x] >> 1;
 }
 
-inline void CPU::subtractWithDifference(const byte x, const byte vx, const byte vy)
+inline void CPU::subtractVxFromVy(const byte x, const byte vx, const byte vy)
 {
     this->_V[0xf] = (vx > vy) ? 0 : 1;
     this->_V[x] = vy - vx;
@@ -292,54 +320,75 @@ inline void CPU::jumpToAddressNNNPlusV0(const uint16_t nnn)
     this->_programCounter = nnn + this->_V[0];
 }
 
-inline void CPU::setVxToBitwiseAndOfRandomNumberAndNN(const Opcode opcode)
+inline void CPU::setVxToBitwiseAndOfRandomNumberAndNN(const byte x, const byte nn)
 {
+    byte random = this->_randomNumberDistribution(this->_randomNumberGenerator);
+    this->_V[x] = random & nn;
 }
 
 inline void CPU::drawSprite(const Opcode opcode)
 {
+    // UI
 }
 
 inline void CPU::skipNextIfKeyInVxIsPressed(const Opcode opcode)
 {
+    // IO
 }
 
 inline void CPU::skipNextIfKeyInVxIsNotPressed(const Opcode opcode)
 {
+    // IO
 }
 
-inline void CPU::assignDelayTimerToVx(const Opcode opcode)
+inline void CPU::assignDelayTimerToVx(const byte x)
 {
+    this->_V[x] = this->_delayTimer;
 }
 
 inline void CPU::getKey(const Opcode opcode)
 {
+    // IO
 }
 
-inline void CPU::setVxToDelayTimer(const Opcode opcode)
+inline void CPU::setDelayTimerToVx(const byte vx)
 {
+    this->_delayTimer = vx;
 }
 
-inline void CPU::setVxToSoundTimer(const Opcode opcode)
+inline void CPU::setSoundTimerToVx(const byte vx)
 {
+    this->_soundTimer = vx;
 }
 
-inline void CPU::addVxToIndexRegister(const Opcode opcode)
+inline void CPU::addVxToIndexRegister(const byte x, const byte vx)
 {
+    this->_V[0xf] = (this->_indexRegister > (0xff - vx)) ? 1 : 0;
+    this->_V[x] += this->_indexRegister;
 }
 
 inline void CPU::setIndexRegisterToSpriteLocation(const Opcode opcode)
 {
+    // UI
 }
 
-inline void CPU::setBinaryCodedDecimalAtVx(const Opcode opcode)
+inline void CPU::setBinaryCodedDecimalAtVx(const byte vx)
 {
+    this->_memory[this->_indexRegister] = vx / 100;
+    this->_memory[this->_indexRegister + 1] = (vx / 10) % 10;
+    this->_memory[this->_indexRegister + 2] = (vx % 100) % 10;
 }
 
-inline void CPU::dumpRegisters(const Opcode opcode)
+inline void CPU::dumpRegisters(const byte x)
 {
+    for (int i = 0; i <= x; ++i) {
+        this->_memory[this->_indexRegister + i] = this->_V[i];
+    }
 }
 
-inline void CPU::loadRegisters(const Opcode opcode)
+inline void CPU::loadRegisters(const byte x)
 {
+    for (int i = 0; i <= x; ++i) {
+        this->_V[i] = this->_memory[this->_indexRegister + i];
+    }
 }

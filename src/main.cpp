@@ -1,8 +1,9 @@
 #include "Chip8Emulator/Chip8Emulator.h"
 #include <iostream>
+#include <memory>
 
 int main()
 {
-    Chip8 chip8;
-    std::cout << "Hello World!";
+    auto chip8 = std::unique_ptr<Chip8> { new Chip8 {} };
+    std::cout << sizeof(chip8);
 }

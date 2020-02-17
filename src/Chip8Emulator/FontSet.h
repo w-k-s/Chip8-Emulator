@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 static const int CHIP_8_FONTSET_SIZE = 80;
 
-static const unsigned char CHIP_8_FONTSET[80] =
+static const uint8_t CHIP_8_FONTSET[80] =
 { 
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
   0x20, 0x60, 0x20, 0x20, 0x70, // 1
