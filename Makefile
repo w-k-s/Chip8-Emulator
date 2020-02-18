@@ -16,7 +16,7 @@ all: main
 
 main: Makefile
 	$(MKDIR)
-	$(CXX) $(CXXFLAGS) $(CXXSOURCES) -o $(OUTPUTDIR)$(BINARY_NAME)
+	$(CXX) $(CXXFLAGS) -framework SDL2 -F ./lib/sdl -rpath ./lib/sdl $(CXXSOURCES) -o $(OUTPUTDIR)$(BINARY_NAME)
 
 .PHONY: clean
 clean:

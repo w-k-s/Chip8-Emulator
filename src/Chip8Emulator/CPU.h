@@ -4,6 +4,7 @@
 
 #include "Memory.h"
 #include "Opcode.h"
+#include "Window.h"
 
 class CPU{
 
@@ -22,6 +23,8 @@ private:
 
 	std::mt19937 _randomNumberGenerator;
 	std::uniform_real_distribution<byte> _randomNumberDistribution;
+
+	Window& _window;
 
 	void reset();
 
@@ -109,7 +112,7 @@ private:
 	void loadRegisters(const byte x);
 
 public:
-	CPU(byte * memory);
+	CPU(byte * memory, Window& window);
 	CPU(const CPU&)				= delete;
 	void operator=(const CPU&)	= delete;
 	

@@ -4,6 +4,6 @@
 
 int main()
 {
-    auto chip8 = std::unique_ptr<Chip8> { new Chip8 {} };
+    auto chip8 = std::make_unique<Chip8>();
     std::cout << sizeof(chip8);
 }

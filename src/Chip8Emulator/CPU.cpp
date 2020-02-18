@@ -3,7 +3,8 @@
 
 #include <iostream>
 
-CPU::CPU(byte* memory)
+CPU::CPU(byte* memory, Window& window)
+    : _window(window)
 {
     this->_memory = memory;
 
@@ -185,6 +186,7 @@ inline void CPU::callProgramAtAddressNNN(const Opcode Opcode)
 
 inline void CPU::clearScreen()
 {
+    this->_window.clear();
 }
 
 inline void CPU::returnFromSubroutine()
