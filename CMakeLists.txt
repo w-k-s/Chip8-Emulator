@@ -1,19 +1,14 @@
 cmake_minimum_required(VERSION 3.12.2 FATAL_ERROR)
 project("Chip-8 Emulator")
 
+# --- Set Variables
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-
-if(APPLE)
-    set(SDL2_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/sdl/SDL2.framework/Headers)
-	set(SDL2_LIBRARY_NAME ${CMAKE_SOURCE_DIR}/lib/sdl/SDL2.framework)
-else
-	message(FATAL_ERROR "Unsupported Platform. SDL2 for this platform is not included in the libraries folder"
-endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -22,24 +17,18 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(warnings "/W4 /WX /EHsc")
 endif()
 
-find_file(SDL2_INCLUDE_DIR NAME SDL.h HINTS SDL2)
+# Add directories to the end of this directory’s include paths
+include_directories(src)
 
-find_library(SDL2_LIBRARY_NAME SDL2)
+# Include the directory source_dir in your project. 
+# This directory must contain a CMakeLists.txt file
+add_subdirectory(src)
+add_subdirectory(test)
+add_subdirectory(lib/googletest)
 
-AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src/Chip8Emulator CHIP8_SOURCES) 
 
-set(SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp 
-			${CMAKE_SOURCE_DIR}/src/Utilities/logging.h
-			${CHIP8_SOURCES})
+# --- Unit testing
 
-add_executable(Chip8Emulator ${SOURCES})
+#enable_testing()
 
-target_include_directories(Chip8Emulator PRIVATE 
-							"${CMAKE_SOURCE_DIR}/src" 
-							"${CMAKE_SOURCE_DIR}/src/Utilities"
-							"${CMAKE_SOURCE_DIR}/src/Chip8Emulator"
-							"${SDL2_INCLUDE_DIR}")
-
-target_link_libraries(Chip8Emulator 
-							"${SDL2_LIBRARY_NAME}")
 

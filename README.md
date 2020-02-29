@@ -17,3 +17,10 @@ cmake --build build -- -j3
 4. [Setting up SDL2](http://lazyfoo.net/tutorials/SDL/01_hello_SDL/index.php)
 
 5. [Linking with Framework on OS X](https://stackoverflow.com/questions/31039625/defining-framework-path-relative-to-executable-in-gnu-clang-compiler-on-mac)
+
+6. [Getting started with cmake](https://tuannguyen68.gitbooks.io/learning-cmake-a-beginner-s-guide/content/chap1/chap1.html)
+
+7. [CMake and Google Tests](https://www.johnlamp.net/cmake-tutorial-4-libraries-and-subdirectories.html) - Good one
+
+https://raymii.org/s/tutorials/Cpp_project_setup_with_cmake_and_unit_tests.html
+
