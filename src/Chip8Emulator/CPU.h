@@ -87,7 +87,7 @@ private:
 
 	void setVxToBitwiseAndOfRandomNumberAndNN(const byte x, const byte nn);
 
-	void drawSprite(const Opcode opcode);
+	void drawSprite(const byte vx, const byte vy, const byte n);
 
 	void skipNextIfKeyInVxIsPressed(const Opcode opcode);
 
@@ -103,7 +103,7 @@ private:
 
 	void addVxToIndexRegister(const byte x, const byte vx);
 
-	void setIndexRegisterToSpriteLocation(const Opcode opcode);
+	void setIndexRegisterToSpriteLocation(const byte vx);
 
 	void setBinaryCodedDecimalAtVx(const byte vx);
 

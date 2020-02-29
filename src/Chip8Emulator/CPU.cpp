@@ -1,6 +1,7 @@
 #include "CPU.h"
 #include "CycleTimer.h"
 
+#include "../Utilities/logging.h"
 #include <iostream>
 
 CPU::CPU(byte* memory, Window& window)
@@ -18,7 +19,7 @@ CPU::CPU(byte* memory, Window& window)
 
 CPU::~CPU()
 {
-    std::cout << "Destroying CPU";
+    L_(linfo) << "Destroying CPU";
 }
 
 void CPU::reset()
@@ -63,7 +64,7 @@ void CPU::cycle()
 
     if (this->_programCounter >= CHIP_8_MEMORY_SIZE) {
         //TODO return error
-        std::cerr << "Instruction Address outside memory bounds. Expected: 0.."
+        L_(lerror) << "Instruction Address outside memory bounds. Expected: 0.."
                   << CHIP_8_MEMORY_SIZE
                   << ", Got: "
                   << this->_programCounter << "\n";
@@ -86,6 +87,7 @@ void CPU::cycle()
     }
 
     timer.maintainCycleRate();
+    this->_window.redraw();
 }
 
 Opcode CPU::fetchOpcode()
@@ -101,8 +103,11 @@ void CPU::decodeOpcode(const Opcode opcode)
     const byte vx = this->_V[x];
     const byte vy = this->_V[y];
 
+    const byte n = (opcode & 0x000f);
     const byte nn = (opcode & 0x00ff);
     const uint16_t nnn = (opcode & 0x0FFF);
+
+    L_(linfo) << "Decoding opcode: '" << std::hex << opcode << "'\n";
 
     if (opcode == 0x00E0) {
         this->clearScreen();
@@ -151,7 +156,7 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF000) == 0xC000) {
         this->setVxToBitwiseAndOfRandomNumberAndNN(x, nn);
     } else if ((opcode & 0xF000) == 0xD000) {
-        this->drawSprite(opcode);
+        this->drawSprite(vx, vy, n);
     } else if ((opcode & 0xF0FF) == 0xE09E) {
         this->skipNextIfKeyInVxIsPressed(opcode);
     } else if ((opcode & 0xF0FF) == 0xE0A1) {
@@ -167,7 +172,7 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF0FF) == 0xF01E) {
         this->addVxToIndexRegister(x, vx);
     } else if ((opcode & 0xF0FF) == 0xF029) {
-        this->setIndexRegisterToSpriteLocation(opcode);
+        this->setIndexRegisterToSpriteLocation(vx);
     } else if ((opcode & 0xF0FF) == 0xF033) {
         this->setBinaryCodedDecimalAtVx(vx);
     } else if ((opcode & 0xF0FF) == 0xF055) {
@@ -175,7 +180,7 @@ void CPU::decodeOpcode(const Opcode opcode)
     } else if ((opcode & 0xF0FF) == 0xF065) {
         this->loadRegisters(x);
     } else {
-        std::cerr << "Unknwown opcode: '" << opcode << "'\n";
+        L_(lerror) << "Unknwown opcode: '" << opcode << "'\n";
     }
 }
 
@@ -193,7 +198,7 @@ inline void CPU::returnFromSubroutine()
 {
     if (this->_stackPointer == 0) {
         // TODO: raise error
-        std::cerr << "Stack underflow";
+        L_(lerror) << "Stack underflow";
         exit(1);
     }
 
@@ -209,7 +214,7 @@ inline void CPU::invokeSubroutine(const uint16_t nnn)
 {
     if (this->_stackPointer + 1 >= STACK_SIZE) {
         // TODO: raise error
-        std::cerr << "Stack overflow\n";
+        L_(lerror) << "Stack overflow\n";
         exit(1);
     }
 
@@ -314,7 +319,7 @@ inline void CPU::jumpToAddressNNNPlusV0(const uint16_t nnn)
 {
     if (this->_stackPointer + 1 >= STACK_SIZE) {
         // TODO: raise error
-        std::cerr << "Stack overflow\n";
+        L_(lerror) << "Stack overflow\n";
         exit(1);
     }
 
@@ -328,9 +333,31 @@ inline void CPU::setVxToBitwiseAndOfRandomNumberAndNN(const byte x, const byte n
     this->_V[x] = random & nn;
 }
 
-inline void CPU::drawSprite(const Opcode opcode)
+inline void CPU::drawSprite(const byte vx, const byte vy, const byte n)
 {
-    // UI
+    const byte x = vx;
+    const byte y = vy;
+    const byte width = 8;
+    const byte height = n;
+
+    Canvas& canvas = this->_window.canvas();
+
+    this->_V[0xF] = 0;
+    byte pixel = 0;
+
+    for (byte yline = 0; yline < height; yline++) {
+        pixel = this->_memory[this->_indexRegister + yline];
+        for (byte xline = 0; xline < width; xline++) {
+            // 0x80 = 10000000. We're shifting the 1 each time, and xorring with 1 to see if the pixel has changed state.
+            if ((pixel & (0x80 >> xline)) != 0) {
+                if (canvas[(x + xline + ((y + yline) * 64))] == 1)
+                    this->_V[0xF] = 1;
+                canvas[x + xline + ((y + yline) * 64)] ^= 1;
+            }
+        }
+    }
+
+    this->_window.publishCanvasToSurface();
 }
 
 inline void CPU::skipNextIfKeyInVxIsPressed(const Opcode opcode)
@@ -369,9 +396,16 @@ inline void CPU::addVxToIndexRegister(const byte x, const byte vx)
     this->_V[x] += this->_indexRegister;
 }
 
-inline void CPU::setIndexRegisterToSpriteLocation(const Opcode opcode)
+inline void CPU::setIndexRegisterToSpriteLocation(const byte vx)
 {
-    // UI
+    const uint16_t fontAddress = CHIP_8_FONTSET_ADDRESS + (vx * 5);
+    if (fontAddress >= CHIP_8_MEMORY_SIZE)
+    {
+        // TODO: Handle error
+        L_(lerror)<<"font char out of range";
+        exit(4);
+    }
+    this->_indexRegister = this->_memory[fontAddress];
 }
 
 inline void CPU::setBinaryCodedDecimalAtVx(const byte vx)

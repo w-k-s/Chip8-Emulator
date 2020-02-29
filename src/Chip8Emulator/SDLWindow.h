@@ -3,13 +3,14 @@
 #include <SDL2/SDL.h>
 #include "Window.h"
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 320;
-
 class SDLWindow : public Window{
 private:
 	SDL_Window* _window;
 	SDL_Surface* _screenSurface;
+
+	Canvas _canvas;
+
+	bool _requiresRedraw;
 
 	void eventLoop();
 public:
@@ -19,5 +20,12 @@ public:
 
 	void setTitle(const std::string& title);
 	void clear();
+
+	void redraw();
+	void setNeedsRedraw();
+
+	Canvas& canvas();
+	void publishCanvasToSurface();
+
 	~SDLWindow();
 };

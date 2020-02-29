@@ -5,7 +5,7 @@
   using ::testing::Eq;
 #include "gtest/gtest.h"
   using ::testing::Test;
-#include "../src/Chip8Emulator/Chip8Emulator.h"
+#include "../src/Chip8Emulator/CPU.h"
 
 namespace testing
 {
