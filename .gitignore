@@ -1,1 +1,4 @@
 bin/
+
+#cmake build directory
+build/

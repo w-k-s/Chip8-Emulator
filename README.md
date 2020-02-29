@@ -1,6 +1,10 @@
 # Chip-8 Emulator
 
 
+```
+cmake -H. -Bbuild
+cmake --build build -- -j3
+```
 
 ## Useful Resources
 
